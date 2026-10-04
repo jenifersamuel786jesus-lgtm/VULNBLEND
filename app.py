@@ -40,8 +40,17 @@ with st.sidebar:
     st.success("LOCAL / ISOLATED")
     st.caption("Backend scope enforcement active")
     st.caption("Data source: SQLite")
+    st.caption("Live execution refresh: 2s")
     st.markdown("<div class='vb-rule'></div>", unsafe_allow_html=True)
     st.caption("VulnBlend v0.1 · research build")
 
 st.markdown(f'<div class="vb-mono">VULNBLEND / {NAV[page][0].upper()} / LOCAL LAB</div>', unsafe_allow_html=True)
-NAV[page][1]()
+
+
+@st.fragment(run_every="2s")
+def render_live_page():
+    """Refresh the active module without requiring a manual browser reload."""
+    NAV[page][1]()
+
+
+render_live_page()

@@ -76,3 +76,11 @@
 - Prove unauthorized public/internal targets are rejected and prohibited destructive behaviors are absent.
 - Verify the app listens on port 3000, the route manifest returns HTTP 200 JSON, the Preview is not a placeholder, and all displayed demo data is explicitly labelled.
 - Commit the completed implementation to the initialized Webdev project and deliver the working Preview URL with the README and source available in the project.
+
+## 13. Upgrade to real-time scan execution — completed
+- A scan starts in a bounded background worker instead of blocking the Streamlit request.
+- SQLite uses WAL mode and a busy timeout so worker writes and UI reads can occur concurrently.
+- Scan stage, progress, request, route, finding, error, limitation, and event state is persisted while execution runs.
+- The active Streamlit module refreshes automatically every two seconds using a native fragment.
+- New Scan displays live progress, execution metrics, recent events, and terminal states without requiring a manual browser reload.
+- Worker exceptions are persisted as failed scans and visible error events rather than leaving executions stuck in queued/running state.

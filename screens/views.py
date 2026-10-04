@@ -11,7 +11,8 @@ from vulblend.db import audit, execute, insert, json_load, new_id, now_iso, one,
 from vulblend.services.experiment_engine import metric_label
 from vulblend.services.reporting import generate_csv, generate_json, generate_pdf, report_payload
 from vulblend.services.risk_engine import calculate_score, latest_scores
-from vulblend.services.scan_runner import create_scan, run_scan
+from vulblend.services.background_scans import start_scan
+from vulblend.services.scan_runner import create_scan
 from vulblend.services.static_analyzer import analyze_source
 from vulblend.services.target_guard import ScopeError, validate_target, validate_source_path
 from vulblend.ui.charts import method_comparison, polish, risk_histogram, severity_chart
@@ -46,6 +47,38 @@ def risk_rows():
 
 def demo_notice():
     st.markdown('<div class="vb-demo"><strong>LAB DATA NOTICE</strong> · Seeded rows are an explicitly labelled demonstration dataset. They are not a claim about a production system.</div>', unsafe_allow_html=True)
+
+
+def live_scan_monitor(scan_id: str):
+    """Render a polling monitor backed by persisted SQLite state."""
+    scan = one("SELECT s.*, a.name AS application_name, c.mode FROM scan_executions s JOIN applications a ON a.id=s.application_id JOIN scan_configs c ON c.id=s.config_id WHERE s.id=?", [scan_id])
+    if not scan:
+        return
+    row = dict(scan)
+    progress = float(row.get("progress") or 0)
+    status = row.get("status", "queued")
+    stage = (row.get("current_stage") or "queued").upper()
+    tone = {"completed": "success", "partial": "warning", "failed": "error", "blocked": "error"}.get(status, "info")
+    st.markdown(f"<div class='vb-eyebrow'>LIVE EXECUTION · {row['id']}</div>", unsafe_allow_html=True)
+    st.progress(progress, text=f"{status.upper()} · {stage} · {round(progress * 100)}%")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Requests", row.get("requests_processed") or 0)
+    m2.metric("Routes", row.get("routes_discovered") or 0)
+    m3.metric("Findings", row.get("findings_count") or 0)
+    m4.metric("Errors", row.get("errors_count") or 0)
+    events = records(query("SELECT stage, level, message, created_at FROM execution_events WHERE scan_id=? ORDER BY created_at DESC LIMIT 12", [scan_id]))
+    if events:
+        st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
+    if row.get("limitation"):
+        st.warning(row["limitation"])
+    if status == "completed":
+        st.success("Scan completed. Findings, evidence, risk scores, and audit events are available in the other modules.")
+    elif status == "partial":
+        st.warning("Scan completed partially. Review the recorded limitation before interpreting the result.")
+    elif status in {"failed", "blocked"}:
+        st.error(row.get("limitation") or "Scan did not complete.")
+    else:
+        st.info("This panel refreshes automatically while the background worker is running.")
 
 
 def render_overview():
@@ -104,14 +137,11 @@ def render_new_scan():
         config_id = insert("scan_configs", {"id": new_id("cfg_"), "application_id": app["id"], "mode": mode, "selected_classes": selected_classes, "crawler_depth": depth, "max_requests": max_requests, "timeout_seconds": timeout, "included_routes": json_load(app["allowed_paths"], []), "excluded_routes": json_load(app["excluded_paths"], []), "payload_dictionary": "safe-lab-v1", "created_at": now_iso()})
         config = one("SELECT * FROM scan_configs WHERE id=?", [config_id]); scan_id = create_scan(dict(config), dict(app))
         st.session_state["last_scan_id"] = scan_id
-        progress = st.progress(0, text="Queued")
-        result = run_scan(scan_id, dict(config), dict(app), lambda value, label: progress.progress(value, text=label))
-        if result["status"] == "completed": st.success(f"Scan completed with {len(result.get('findings', []))} findings.")
-        elif result["status"] == "partial": st.warning("Scan completed partially; review recorded limitations before interpreting results.")
-        else: st.error(result.get("error", "Scan was blocked."))
-        st.json({"scan_id": scan_id, "status": result["status"], "requests": result.get("requests_processed", 0), "routes": result.get("routes_discovered", 0), "limitations": result.get("limitation")})
+        start_scan(scan_id, dict(config), dict(app))
+        st.success("Scan queued in the background. Live progress will update automatically.")
     if st.session_state.get("last_scan_id"):
         st.caption(f"Latest execution: {st.session_state['last_scan_id']}")
+        live_scan_monitor(st.session_state["last_scan_id"])
 
 
 def render_targets():
