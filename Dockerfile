@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p /app/data /app/reports
 EXPOSE 3000
-CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=3000", "--server.headless=true", "--browser.gatherUsageStats=false"]
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=3000", "--server.headless=true", "--server.enableCORS=false", "--server.enableXsrfProtection=false", "--server.enableWebsocketCompression=false", "--browser.gatherUsageStats=false"]
