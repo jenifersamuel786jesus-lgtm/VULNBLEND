@@ -28,6 +28,7 @@ def inject_css() -> None:
     .vb-low { color:#bae6fd; background:rgba(3,105,161,.2); border-color:rgba(56,189,248,.35); }
     .vb-demo { border-left:3px solid var(--violet); background:rgba(76,29,149,.17); color:#ddd6fe; padding:10px 14px; border-radius:0 8px 8px 0; font-size:.82rem; }
     .vb-mono { font-family:'IBM Plex Mono',monospace; color:#a5b4fc; font-size:.78rem; }
+    .vb-chart-title { color:#dbeafe; font-size:.88rem; font-weight:600; margin:10px 0 -4px 2px; letter-spacing:-.01em; }
     .vb-rule { border-top:1px solid var(--line); margin:16px 0; }
     div[data-testid='stMetric'] { background:rgba(13,27,46,.72); border:1px solid var(--line); padding:12px; border-radius:12px; }
     .stButton > button { border-radius:9px; border:1px solid #2a4b70; background:#102744; color:#eaf2ff; }

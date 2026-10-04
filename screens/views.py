@@ -101,8 +101,10 @@ def render_overview():
     filtered = [row for row in all_findings if (target_filter == "All targets" or row["application_name"] == target_filter) and (severity_filter == "All severities" or row["severity"] == severity_filter) and (verification_filter == "All statuses" or row["verification_status"] == verification_filter)]
     left, right = st.columns([1.1, 1])
     with left:
+        st.markdown("<div class='vb-chart-title'>Findings by severity</div>", unsafe_allow_html=True)
         st.plotly_chart(severity_chart(filtered), use_container_width=True, config={"displayModeBar": False})
     with right:
+        st.markdown("<div class='vb-chart-title'>Risk score distribution</div>", unsafe_allow_html=True)
         st.plotly_chart(risk_histogram(filtered), use_container_width=True, config={"displayModeBar": False})
     st.subheader("Top vulnerabilities requiring attention")
     if filtered:
@@ -253,6 +255,7 @@ def render_prioritization():
     st.markdown("<div class='vb-demo'><strong>FORMULA v1-RESEARCH</strong> · Severity, verification, confidence, reachability, exposure, impact, and analysis confidence are normalized to a 0–1 weighted score.</div>", unsafe_allow_html=True)
     if ranked:
         df = pd.DataFrame([{**r, "risk_score": r.get("score") or 0, "severity_rank": list(sorted(SEVERITY_VALUES, key=SEVERITY_VALUES.get, reverse=True)).index(r["severity"]) + 1} for r in ranked])
+        st.markdown("<div class='vb-chart-title'>Risk score distribution</div>", unsafe_allow_html=True)
         st.plotly_chart(risk_histogram([{**r, "score": r.get("score") or 0, "category": r.get("category") or "Unscored"} for r in ranked]), use_container_width=True, config={"displayModeBar": False})
         st.dataframe(df[["priority_rank", "title", "severity", "verification_status", "risk_score", "category", "rationale"]], use_container_width=True, hide_index=True)
         st.subheader("Explain a score")
@@ -279,7 +282,7 @@ def render_experiments():
     page_header("10 / evaluation", "Experiment Lab", "Compare methods against stored ground truth without overstating accuracy or remediation gains.")
     demo_notice(); rows = records(query("SELECT e.method, e.name, e.data_origin, r.* FROM experiment_runs e JOIN experiment_results r ON r.experiment_id=e.id ORDER BY e.method"))
     if not rows: st.info("No experiment results available."); return
-    df = pd.DataFrame(rows); st.plotly_chart(method_comparison(df.to_dict("records")), use_container_width=True, config={"displayModeBar": False})
+    df = pd.DataFrame(rows); st.markdown("<div class='vb-chart-title'>Controlled method comparison</div>", unsafe_allow_html=True); st.plotly_chart(method_comparison(df.to_dict("records")), use_container_width=True, config={"displayModeBar": False})
     display = df.copy();
     for col in ["precision", "recall", "f1", "false_positive_rate", "verification_rate", "crawl_coverage"]: display[col] = display[col].apply(lambda value: metric_label(value))
     st.dataframe(display[["method", "tp", "fp", "tn", "fn", "precision", "recall", "f1", "false_positive_rate", "verification_rate", "execution_time", "crawl_coverage", "data_origin"]], use_container_width=True, hide_index=True)
