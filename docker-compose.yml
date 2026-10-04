@@ -1,0 +1,29 @@
+services:
+  vulblend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      VULNBLEND_DB_PATH: /app/data/vulnblend.db
+      VULNBLEND_ALLOWED_HOSTS: testbed,127.0.0.1,localhost
+      VULNBLEND_DEFAULT_TARGET_URL: http://testbed:8080
+      VULNBLEND_DEMO_MODE: "true"
+    volumes:
+      - vulblend_data:/app/data
+      - vulblend_reports:/app/reports
+    depends_on:
+      - testbed
+    networks:
+      - labnet
+  testbed:
+    build: ./testbed
+    expose:
+      - "8080"
+    networks:
+      - labnet
+networks:
+  labnet:
+    internal: true
+volumes:
+  vulblend_data:
+  vulblend_reports:

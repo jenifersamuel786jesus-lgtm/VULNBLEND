@@ -1,0 +1,9 @@
+{
+  "testbed_version": "lab-v1",
+  "cases": [
+    {"code": "TC-SQLI-001", "type": "SQLi", "route": "/search", "parameter": "q", "ground_truth": true},
+    {"code": "TC-XSS-001", "type": "XSS", "route": "/search", "parameter": "q", "ground_truth": true},
+    {"code": "TC-XSS-002", "type": "XSS", "route": "/profile", "parameter": "name", "ground_truth": false},
+    {"code": "TC-SEC-001", "type": "Configuration", "route": "/", "ground_truth": false}
+  ]
+}
